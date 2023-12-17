@@ -431,66 +431,52 @@ def sort_rating(d: dict):
     return new_d
 
 
-def extract_info(scene: dict, template: None):
+def extract_info(gallery: dict, template: None):
     # Grabbing things from Stash
-    scene_information = {}
+    gallery_information = {}
 
-    scene_information['current_path'] = str(scene['path'])
+    gallery_information['current_path'] = str(gallery['files']['path'])
     # note: contain the dot (.mp4)
-    scene_information['file_extension'] = os.path.splitext(scene_information['current_path'])[1]
+    gallery_information['file_extension'] = os.path.splitext(gallery_information['current_path'])[1]
     # note: basename contains the extension
-    scene_information['current_filename'] = os.path.basename(scene_information['current_path'])
-    scene_information['current_directory'] = os.path.dirname(scene_information['current_path'])
-    scene_information['oshash'] = scene['oshash']
-    scene_information['checksum'] = scene.get("checksum")
-    scene_information['studio_code'] = scene.get("code")
-
-    if scene.get("stash_ids"):
-        #todo support other db that stashdb ?
-        scene_information['stashid_scene'] = scene['stash_ids'][0]["stash_id"]
+    gallery_information['current_filename'] = os.path.basename(gallery_information['current_path'])
+    gallery_information['current_directory'] = os.path.dirname(gallery_information['current_path'])
 
     if template.get("path"):
         if "^*" in template["path"]["destination"]:
-            template["path"]["destination"] = template["path"]["destination"].replace("^*", scene_information['current_directory'])
-        scene_information['template_split'] = os.path.normpath(template["path"]["destination"]).split(os.sep)
-    scene_information['current_path_split'] = os.path.normpath(scene_information['current_path']).split(os.sep)
+            template["path"]["destination"] = template["path"]["destination"].replace("^*", gallery_information['current_directory'])
+        gallery_information['template_split'] = os.path.normpath(template["path"]["destination"]).split(os.sep)
+    gallery_information['current_path_split'] = os.path.normpath(gallery_information['current_path']).split(os.sep)
 
-    if FILENAME_ASTITLE and not scene.get("title"):
-        scene["title"] = scene_information['current_filename']
+    if FILENAME_ASTITLE and not gallery.get("title"):
+        gallery["title"] = gallery_information['current_filename']
 
     # Grab Title (without extension if present)
-    if scene.get("title"):
+    if gallery.get("title"):
         # Removing extension if present in title
-        scene_information['title'] = re.sub(fr"{scene_information['file_extension']}$", "", scene['title'])
+        gallery_information['title'] = re.sub(fr"{gallery_information['file_extension']}$", "", gallery['title'])
         if PREPOSITIONS_REMOVAL:
             for word in PREPOSITIONS_LIST:
-                scene_information['title'] = re.sub(fr"^{word}[\s_-]", "", scene_information['title'])
+                gallery_information['title'] = re.sub(fr"^{word}[\s_-]", "", gallery_information['title'])
 
     # Grab Date
-    scene_information['date'] = scene.get("date")
-    if scene_information['date']:
-        date_scene = datetime.strptime(scene_information['date'], r"%Y-%m-%d")
-        scene_information['date_format'] = datetime.strftime(date_scene, config.date_format)
-
-    # Grab Duration
-    scene_information['duration'] = scene['file']['duration']
-    if config.duration_format:
-        scene_information['duration'] = time.strftime(config.duration_format, time.gmtime(scene_information['duration']))
-    else:
-        scene_information['duration'] = str(scene_information['duration'])
+    gallery_information['date'] = gallery.get("date")
+    if gallery_information['date']:
+        date_gallery = datetime.strptime(gallery_information['date'], r"%Y-%m-%d")
+        gallery_information['date_format'] = datetime.strftime(date_gallery, config.date_format)
 
     # Grab Rating
-    if scene.get("rating"):
-        scene_information['rating'] = RATING_FORMAT.format(scene['rating'])
+    if gallery.get("rating100"):
+        gallery_information['rating'] = RATING_FORMAT.format(gallery['rating100'])
 
     # Grab Performer
-    scene_information['performer_path'] = None
-    if scene.get("performers"):
+    gallery_information['performer_path'] = None
+    if gallery.get("performers"):
         perf_list = []
         perf_list_stashid = []
         perf_rating = {"0": []}
         perf_favorite = {"yes": [], "no": []}
-        for perf in scene['performers']:
+        for perf in gallery['performers']:
             if perf.get("gender"):
                 if perf['gender'] in PERFORMER_IGNOREGENDER:
                     continue
@@ -512,8 +498,8 @@ def extract_info(scene: dict, template: None):
             else:
                 perf_favorite['no'].append(perf['name'])
             # if the path already contains the name we keep this one
-            if perf["name"] in scene_information['current_path_split'] and scene_information.get('performer_path') is None and PATH_KEEP_ALRPERF:
-                scene_information['performer_path'] = perf["name"]
+            if perf["name"] in gallery_information['current_path_split'] and gallery_information.get('performer_path') is None and PATH_KEEP_ALRPERF:
+                gallery_information['performer_path'] = perf["name"]
                 log.LogDebug(f"[PATH] Keeping the current name of the performer '{perf['name']}'")
         perf_rating = sort_rating(perf_rating)
         # sort performer
@@ -539,8 +525,8 @@ def extract_info(scene: dict, template: None):
                         perf_list.append(n)
         elif PERFORMER_SORT == "name":
             perf_list.sort()
-        if not scene_information['performer_path'] and perf_list:
-            scene_information['performer_path'] = perf_list[0]
+        if not gallery_information['performer_path'] and perf_list:
+            gallery_information['performer_path'] = perf_list[0]
         if len(perf_list) > PERFORMER_LIMIT:
             if not PERFORMER_LIMIT_KEEP:
                 log.LogInfo(f"More than {PERFORMER_LIMIT} performer(s). Ignoring $performer")
@@ -548,37 +534,37 @@ def extract_info(scene: dict, template: None):
             else:
                 log.LogInfo(f"Limited the amount of performer to {PERFORMER_LIMIT}")
                 perf_list = perf_list[0: PERFORMER_LIMIT]
-        scene_information['performer'] = PERFORMER_SPLITCHAR.join(perf_list)
+        gallery_information['performer'] = PERFORMER_SPLITCHAR.join(perf_list)
         if perf_list:
             for p in perf_list:
-                for perf in scene['performers']:
+                for perf in gallery['performers']:
                     #todo support other db that stashdb ?
                     if p == perf['name'] and perf.get('stash_ids'):
                         perf_list_stashid.append(perf['stash_ids'][0]["stash_id"])
                         break
-            scene_information['stashid_performer'] = PERFORMER_SPLITCHAR.join(perf_list_stashid)
+            gallery_information['stashid_performer'] = PERFORMER_SPLITCHAR.join(perf_list_stashid)
         if not PATH_ONEPERFORMER:
-            scene_information['performer_path'] = PERFORMER_SPLITCHAR.join(perf_list)
+            gallery_information['performer_path'] = PERFORMER_SPLITCHAR.join(perf_list)
     elif PATH_NOPERFORMER_FOLDER:
-        scene_information['performer_path'] = "NoPerformer"
+        gallery_information['performer_path'] = "NoPerformer"
 
     # Grab Studio name
-    if scene.get("studio"):
+    if gallery.get("studio"):
         if SQUEEZE_STUDIO_NAMES:
-            scene_information['studio'] = scene['studio']['name'].replace(' ', '')
+            gallery_information['studio'] = gallery['studio']['name'].replace(' ', '')
         else:
-            scene_information['studio'] = scene['studio']['name']
-        scene_information['studio_family'] = scene_information['studio']
-        studio_hierarchy = [scene_information['studio']]
+            gallery_information['studio'] = gallery['studio']['name']
+        gallery_information['studio_family'] = gallery_information['studio']
+        studio_hierarchy = [gallery_information['studio']]
         # Grab Parent name
-        if scene['studio'].get("parent_studio"):
+        if gallery['studio'].get("parent_studio"):
             if SQUEEZE_STUDIO_NAMES:
-                scene_information['parent_studio'] = scene['studio']['parent_studio']['name'].replace(' ', '')
+                gallery_information['parent_studio'] = gallery['studio']['parent_studio']['name'].replace(' ', '')
             else:
-                scene_information['parent_studio'] = scene['studio']['parent_studio']['name']
-            scene_information['studio_family'] = scene_information['parent_studio']
+                gallery_information['parent_studio'] = gallery['studio']['parent_studio']['name']
+            gallery_information['studio_family'] = gallery_information['parent_studio']
 
-            studio_p = scene['studio']
+            studio_p = gallery['studio']
             while studio_p.get("parent_studio"):
                 studio_p = graphql_getStudio(studio_p['parent_studio']['id'])
                 if studio_p:
@@ -587,11 +573,11 @@ def extract_info(scene: dict, template: None):
                     else:
                         studio_hierarchy.append(studio_p['name'])
             studio_hierarchy.reverse()
-        scene_information['studio_hierarchy'] = studio_hierarchy
+        gallery_information['studio_hierarchy'] = studio_hierarchy
     # Grab Tags
-    if scene.get("tags"):
+    if gallery.get("tags"):
         tag_list = []
-        for tag in scene['tags']:
+        for tag in gallery['tags']:
             # ignore tag in blacklist
             if tag['name'] in TAGS_BLACKLIST:
                 continue
@@ -601,51 +587,17 @@ def extract_info(scene: dict, template: None):
                     tag_list.append(tag['name'])
             else:
                 tag_list.append(tag['name'])
-        scene_information['tags'] = TAGS_SPLITCHAR.join(tag_list)
-
-    # Grab Height (720p,1080p,4k...)
-    scene_information['bitrate'] = str(round(int(scene['file']['bitrate']) / 1000000, 2))
-    scene_information['resolution'] = 'SD'
-    scene_information['height'] = f"{scene['file']['height']}p"
-    if scene['file']['height'] >= 720:
-        scene_information['resolution'] = 'HD'
-    if scene['file']['height'] >= 2160:
-        scene_information['height'] = '4k'
-        scene_information['resolution'] = 'UHD'
-    if scene['file']['height'] >= 2880:
-        scene_information['height'] = '5k'
-    if scene['file']['height'] >= 3384:
-        scene_information['height'] = '6k'
-    if scene['file']['height'] >= 4320:
-        scene_information['height'] = '8k'
-    # For Phone ?
-    if scene['file']['height'] > scene['file']['width']:
-        scene_information['resolution'] = 'VERTICAL'
-
-    if scene.get("movies"):
-        scene_information["movie_title"] = scene["movies"][0]["movie"]["name"]
-        if scene["movies"][0]["movie"].get("date"):
-            scene_information["movie_year"] = scene["movies"][0]["movie"]["date"][0:4]
-        if scene["movies"][0].get("scene_index"):
-            scene_information["movie_index"] = scene["movies"][0]["scene_index"]
-            scene_information["movie_scene"] = f"scene {scene_information['movie_index']}"
-
-    # Grab Video and Audio codec
-    scene_information['video_codec'] = scene['file']['video_codec'].upper()
-    scene_information['audio_codec'] = scene['file']['audio_codec'].upper()
-
-    if scene_information.get("date"):
-        scene_information['year'] = scene_information['date'][0:4]
+        gallery_information['tags'] = TAGS_SPLITCHAR.join(tag_list)
 
     if FIELD_WHITESPACE_SEP:
-        for key, value in scene_information.items():
+        for key, value in gallery_information.items():
             if key in ["current_path", "current_filename", "current_directory", "current_path_split", "template_split"]:
                 continue
             if type(value) is str:
-                scene_information[key] = value.replace(" ", FIELD_WHITESPACE_SEP)
+                gallery_information[key] = value.replace(" ", FIELD_WHITESPACE_SEP)
             elif type(value) is list:
-                scene_information[key] = [x.replace(" ", FIELD_WHITESPACE_SEP) for x in value]
-    return scene_information
+                gallery_information[key] = [x.replace(" ", FIELD_WHITESPACE_SEP) for x in value]
+    return gallery_information
 
 
 def replace_text(text: str):
