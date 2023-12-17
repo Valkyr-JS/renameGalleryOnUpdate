@@ -798,10 +798,10 @@ def checking_duplicate_db(gallery_information: dict):
                 log.LogWarning(f"Duplicate filename: [{dupl_row['id']}]")
 
 
-def db_rename(stash_db: sqlite3.Connection, scene_info):
+def db_rename(stash_db: sqlite3.Connection, gallery_information):
     cursor = stash_db.cursor()
     # Database rename
-    cursor.execute("UPDATE scenes SET path=? WHERE id=?;", [scene_info['final_path'], scene_info['scene_id']])
+    cursor.execute("UPDATE galleries SET path=? WHERE id=?;", [gallery_information['final_path'], gallery_information['gallery_id']])
     stash_db.commit()
     # Close DB
     cursor.close()
