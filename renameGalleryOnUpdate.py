@@ -867,7 +867,7 @@ def db_rename_refactor(stash_db: sqlite3.Connection, gallery_information):
         raise Exception(f"You need to setup a library with the new location ({gallery_information['new_directory']}) and scan at least 1 file")
 
 
-def file_rename(current_path: str, new_path: str, scene_info: dict):
+def file_rename(current_path: str, new_path: str, gallery_information: dict):
     # OS Rename
     if not os.path.isfile(current_path):
         log.LogWarning(f"[OS] File doesn't exist in your Disk/Drive ({current_path})")
@@ -910,7 +910,7 @@ def file_rename(current_path: str, new_path: str, scene_info: dict):
         if LOGFILE:
             try:
                 with open(LOGFILE, 'a', encoding='utf-8') as f:
-                    f.write(f"{scene_info['scene_id']}|{current_path}|{new_path}|{scene_info['oshash']}\n")
+                    f.write(f"{gallery_information['gallery_id']}|{current_path}|{new_path}\n")
             except Exception as err:
                 shutil.move(new_path, current_path)
                 log.LogError(f"Restoring the original path, error writing the logfile: {err}")
