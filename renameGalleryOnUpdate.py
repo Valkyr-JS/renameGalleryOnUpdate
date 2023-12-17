@@ -347,12 +347,12 @@ def check_longpath(path: str):
         return 1
 
 
-def get_template_filename(scene: dict):
+def get_template_filename(gallery: dict):
     template = None
     # Change by Studio
-    if scene.get("studio") and config.studio_templates:
+    if gallery.get("studio") and config.studio_templates:
         template_found = False
-        current_studio = scene.get("studio")
+        current_studio = gallery.get("studio")
         if config.studio_templates.get(current_studio['name']):
             template = config.studio_templates[current_studio['name']]
             template_found = True
@@ -364,8 +364,8 @@ def get_template_filename(scene: dict):
             current_studio = graphql_getStudio(current_studio.get("parent_studio")['id'])
 
     # Change by Tag
-    tags = [x["name"] for x in scene["tags"]]
-    if scene.get("tags") and config.tag_templates:
+    tags = [x["name"] for x in gallery["tags"]]
+    if gallery.get("tags") and config.tag_templates:
         for match, job in config.tag_templates.items():
             if match in tags:
                 template = job
