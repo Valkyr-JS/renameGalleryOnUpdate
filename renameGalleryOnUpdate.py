@@ -928,11 +928,11 @@ def file_rename(current_path: str, new_path: str, gallery_information: dict):
         log.LogError(f"[OS] Failed to rename the file ? {new_path}")
         return 1
 
-def associated_rename(scene_info: dict):
+def associated_rename(gallery_information: dict):
     if ASSOCIATED_EXT:
         for ext in ASSOCIATED_EXT:
-            p = os.path.splitext(scene_info['current_path'])[0] + "." + ext
-            p_new = os.path.splitext(scene_info['final_path'])[0] + "." + ext
+            p = os.path.splitext(gallery_information['current_path'])[0] + "." + ext
+            p_new = os.path.splitext(gallery_information['final_path'])[0] + "." + ext
             if os.path.isfile(p):
                 try:
                     shutil.move(p, p_new)
@@ -944,7 +944,7 @@ def associated_rename(scene_info: dict):
                 if LOGFILE:
                     try:
                         with open(LOGFILE, 'a', encoding='utf-8') as f:
-                            f.write(f"{scene_info['scene_id']}|{p}|{p_new}\n")
+                            f.write(f"{gallery_information['gallery_id']}|{p}|{p_new}\n")
                     except Exception as err:
                         shutil.move(p_new, p)
                         log.LogError(f"Restoring the original name, error writing the logfile: {err}")
