@@ -258,15 +258,15 @@ def graphql_getStudio(studio_id):
     return result.get("findStudio")
 
 
-def graphql_removeScenesTag(id_scenes: list, id_tags: list):
+def graphql_removeGalleriesTag(id_galleries: list, id_tags: list):
     query = """
-    mutation BulkSceneUpdate($input: BulkSceneUpdateInput!) {
-        bulkSceneUpdate(input: $input) {
+    mutation BulkGalleryUpdate($input: BulkGalleryUpdateInput!) {
+        bulkGalleryUpdate(input: $input) {
             id
         }
-    }
+    }    
     """
-    variables = {'input': {"ids": id_scenes, "tag_ids": {"ids": id_tags, "mode": "REMOVE"}}}
+    variables = {'input': {"ids": id_galleries, "tag_ids": {"ids": id_tags, "mode": "REMOVE"}}}
     result = callGraphQL(query, variables)
     return result
 
@@ -1171,7 +1171,7 @@ def renamer(scene_id, db_conn=None):
                 associated_rename(scene_information)
             if template.get("path"):
                 if "clean_tag" in template["path"]["option"]:
-                    graphql_removeScenesTag([scene_information['scene_id']], template["path"]["opt_details"]["clean_tag"])
+                    graphql_removeGalleriesTag([scene_information['scene_id']], template["path"]["opt_details"]["clean_tag"])
         except Exception as err:
             log.LogError(f"Error during database operation ({err})")
             if not db_conn:
