@@ -734,21 +734,21 @@ def remove_consecutive(liste: list):
     return new_list
 
 
-def create_new_path(scene_info: dict, template: dict):
+def create_new_path(gallery_information: dict, template: dict):
     # Create the new path
     # Split the template path
-    path_split = scene_info['template_split']
+    path_split = gallery_information['template_split']
     path_list = []
     for part in path_split:
         if ":" in part and path_split[0]:
             path_list.append(part)
         elif part == "$studio_hierarchy":
-            if not scene_info.get("studio_hierarchy"):
+            if not gallery_information.get("studio_hierarchy"):
                 continue
-            for p in scene_info["studio_hierarchy"]:
+            for p in gallery_information["studio_hierarchy"]:
                 path_list.append(re.sub('[\\/:"*?<>|]+', '', p).strip())
         else:
-            path_list.append(re.sub('[\\/:"*?<>|]+', '', makePath(scene_info, part)).strip())
+            path_list.append(re.sub('[\\/:"*?<>|]+', '', makePath(gallery_information, part)).strip())
     # Remove blank, empty string
     path_split = [x for x in path_list if x]
     # The first character was a seperator, so put it back.
@@ -756,12 +756,12 @@ def create_new_path(scene_info: dict, template: dict):
         path_split.insert(0, "")
 
     if PREVENT_CONSECUTIVE:
-        # remove consecutive (/FolderName/FolderName/video.mp4 -> FolderName/video.mp4
+        # remove consecutive (/FolderName/FolderName/gallery.zip -> FolderName/gallery.zip
         path_split = remove_consecutive(path_split)
 
     if "^*" in template["path"]["destination"]:
-        if scene_info['current_directory'] != os.sep.join(path_split):
-            path_split.pop(len(scene_info['current_directory']))
+        if gallery_information['current_directory'] != os.sep.join(path_split):
+            path_split.pop(len(gallery_information['current_directory']))
 
     path_edited = os.sep.join(path_split)
 
