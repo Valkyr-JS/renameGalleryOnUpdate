@@ -672,9 +672,9 @@ def field_replacer(text: str, gallery_information:dict):
     return result, title
 
 
-def makeFilename(scene_information: dict, query: str) -> str:
+def makeFilename(gallery_information: dict, query: str) -> str:
     new_filename = str(query)
-    r, t = field_replacer(new_filename, scene_information)
+    r, t = field_replacer(new_filename, gallery_information)
     if FILENAME_REPLACEWORDS:
         r = replace_text(r)
     if not t:
