@@ -97,24 +97,18 @@ def callGraphQL(query, variables=None):
         raise ConnectionError(f"GraphQL query failed: {response.status_code} - {response.content}")
 
 
-def graphql_getScene(scene_id):
+def graphql_getGallery(gallery_id):
     query = """
-    query FindScene($id: ID!, $checksum: String) {
-        findScene(id: $id, checksum: $checksum) {
-            ...SceneData
+    query FindGallery($id: ID!) {
+        findGallery(id: $id) {
+            ...GalleryData
         }
     }
-    fragment SceneData on Scene {
+    fragment GalleryData on Gallery {
         id
-        oshash
-        checksum
         title
         date
-        rating
-        stash_ids {
-            endpoint
-            stash_id
-        }
+        rating100
         organized""" + FILE_QUERY + """
         studio {
             id
@@ -139,20 +133,13 @@ def graphql_getScene(scene_id):
                 stash_id
             }
         }
-        movies {
-            movie {
-                name
-                date
-            }
-            scene_index
-        }
     }
     """
     variables = {
-        "id": scene_id
+        "id": gallery_id
     }
     result = callGraphQL(query, variables)
-    return result.get('findScene')
+    return result.get('findGallery')
 
 
 # used for bulk
