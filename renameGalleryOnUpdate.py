@@ -687,10 +687,10 @@ def makeFilename(gallery_information: dict, query: str) -> str:
     return r
 
 
-def makePath(scene_information: dict, query: str) -> str:
+def makePath(gallery_information: dict, query: str) -> str:
     new_filename = str(query)
     new_filename = new_filename.replace("$performer", "$performer_path")
-    r, t = field_replacer(new_filename, scene_information)
+    r, t = field_replacer(new_filename, gallery_information)
     if not t:
         r = r.replace("$title", "")
     r = cleanup_text(r)
