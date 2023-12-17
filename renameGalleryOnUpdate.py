@@ -143,28 +143,22 @@ def graphql_getGallery(gallery_id):
 
 
 # used for bulk
-def graphql_findScene(perPage, direc="DESC") -> dict:
+def graphql_findGallery(perPage, direc="DESC") -> dict:
     query = """
-    query FindScenes($filter: FindFilterType) {
-        findScenes(filter: $filter) {
+    query FindGalleries($filter: FindFilterType) {
+        findGalleries(filter: $filter) {
             count
-            scenes {
-                ...SlimSceneData
+            galleries {
+                ...SlimGalleryData
             }
         }
     }
-    fragment SlimSceneData on Scene {
+    fragment SlimGalleryData on Gallery {
         id
-        oshash
-        checksum
         title
         date
-        rating
+        rating100
         organized
-        stash_ids {
-            endpoint
-            stash_id
-        }
     """ + FILE_QUERY + """
         studio {
             id
@@ -183,25 +177,18 @@ def graphql_findScene(perPage, direc="DESC") -> dict:
             name
             gender
             favorite
-            rating
-            stash_ids{
+            rating100
+            stash_ids {
                 endpoint
                 stash_id
             }
         }
-        movies {
-            movie {
-                name
-                date
-            }
-            scene_index
-        }
-    }
+    }    
     """
     # ASC DESC
     variables = {'filter': {"direction": direc, "page": 1, "per_page": perPage, "sort": "updated_at"}}
     result = callGraphQL(query, variables)
-    return result.get("findScenes")
+    return result.get("findGalleries")
 
 
 # used to find duplicate
@@ -1017,7 +1004,7 @@ def renamer(scene_id, db_conn=None):
         stash_scene = scene_id
         scene_id = stash_scene['id']
     elif type(scene_id) is int:
-        stash_scene = graphql_getScene(scene_id)
+        stash_scene = graphql_getGallery(scene_id)
 
     if config.only_organized and not stash_scene['organized'] and not PATH_NON_ORGANIZED:
         log.LogDebug(f"[{scene_id}] Scene ignored (not organized)")
@@ -1329,7 +1316,7 @@ if DB_VERSION >= DB_VERSION_SCENE_STUDIO_CODE:
 
 if PLUGIN_ARGS:
     if "bulk" in PLUGIN_ARGS:
-        scenes = graphql_findScene(config.batch_number_scene, "ASC")
+        scenes = graphql_findGallery(config.batch_number_scene, "ASC")
         log.LogDebug(f"Count scenes: {len(scenes['scenes'])}")
         progress = 0
         progress_step = 1 / len(scenes['scenes'])
