@@ -704,8 +704,8 @@ def capitalizeWords(s: str):
     return re.sub(r"[A-Za-z]+('[A-Za-z]+)?", lambda word: word.group(0).capitalize(), s)
 
 
-def create_new_filename(scene_info: dict, template: str):
-    new_filename = makeFilename(scene_info, template) + DUPLICATE_SUFFIX[scene_info['file_index']] + scene_info['file_extension']
+def create_new_filename(gallery_information: dict, template: str):
+    new_filename = makeFilename(gallery_information, template) + DUPLICATE_SUFFIX[gallery_information['file_index']] + gallery_information['file_extension']
     if FILENAME_LOWER:
         new_filename = new_filename.lower()
     if FILENAME_TITLECASE:
