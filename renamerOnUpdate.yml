@@ -10,7 +10,7 @@ hooks:
   - name: hook_rename
     description: Rename/move gallery filename based on a template.
     triggeredBy:
-      - Scene.Update.Post # ! Will need to change to Gallery instead of Scene
+      - Gallery.Update.Post
 tasks:
   - name: "Disable"
     description: Disable the hook
