@@ -192,12 +192,12 @@ def graphql_findGallery(perPage, direc="DESC") -> dict:
 
 
 # used to find duplicate
-def graphql_findScenebyPath(path, modifier) -> dict:
+def graphql_findGallerybyPath(path, modifier) -> dict:
     query = """
-    query FindScenes($filter: FindFilterType, $scene_filter: SceneFilterType) {
-        findScenes(filter: $filter, scene_filter: $scene_filter) {
+    query FindGalleries($filter: FindFilterType, $gallery_filter: GalleryFilterType) {
+        findGalleries(filter: $filter, gallery_filter: $gallery_filter) {
             count
-            scenes {
+            galleries {
                 id
                 title
             }
@@ -212,7 +212,7 @@ def graphql_findScenebyPath(path, modifier) -> dict:
             "per_page": 40,
             "sort": "updated_at"
         },
-        "scene_filter": {
+        "gallery_filter": {
             "path": {
                 "modifier": modifier,
                 "value": path
@@ -220,7 +220,7 @@ def graphql_findScenebyPath(path, modifier) -> dict:
         }
     }
     result = callGraphQL(query, variables)
-    return result.get("findScenes")
+    return result.get("findGalleries")
 
 
 
@@ -833,13 +833,13 @@ def connect_db(path: str):
 
 
 def checking_duplicate_db(scene_info: dict):
-    scenes = graphql_findScenebyPath(scene_info['final_path'], "EQUALS")
+    scenes = graphql_findGallerybyPath(scene_info['final_path'], "EQUALS")
     if scenes["count"] > 0:
         log.LogError("Duplicate path detected")
         for dupl_row in scenes["scenes"]:
             log.LogWarning(f"Identical path: [{dupl_row['id']}]")
         return 1
-    scenes = graphql_findScenebyPath(scene_info['new_filename'], "EQUALS")
+    scenes = graphql_findGallerybyPath(scene_info['new_filename'], "EQUALS")
     if scenes["count"] > 0:
         for dupl_row in scenes["scenes"]:
             if dupl_row['id'] != scene_info['scene_id']:
