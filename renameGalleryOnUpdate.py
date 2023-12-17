@@ -448,7 +448,7 @@ def extract_info(gallery: dict, template: None):
     # Grabbing things from Stash
     gallery_information = {}
 
-    gallery_information['current_path'] = str(gallery['files']['path'])
+    gallery_information['current_path'] = str(gallery['file']['path'])
     # note: contain the dot (.mp4)
     gallery_information['file_extension'] = os.path.splitext(gallery_information['current_path'])[1]
     # note: basename contains the extension
@@ -857,7 +857,7 @@ def db_rename_refactor(stash_db: sqlite3.Connection, gallery_information):
     else:
         folder_id = folder_id[0][0]
     if folder_id:
-        cursor.execute("SELECT file_id from gallery_files WHERE gallery_id=?", [gallery_information['gallery_id']])
+        cursor.execute("SELECT file_id from galleries_files WHERE gallery_id=?", [gallery_information['gallery_id']])
         file_ids = cursor.fetchall()
         file_id = None
         for f in file_ids:

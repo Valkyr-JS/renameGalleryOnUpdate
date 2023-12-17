@@ -232,7 +232,7 @@ batch_number_gallery = -1
 enable_hook = True
 # disable/enable dry mode. Do a trial run with no permanent changes. Can write into a file (dryrun_renamerOnUpdate.txt), set a path for log_file. 
 # You can edit this value in 'Plugin Tasks' inside of Stash.
-dry_run = False
+dry_run = True # ! Revert to False at v1.0.0
 # Choose if you want to append to (True) or overwrite (False) the dry-run log file.
 dry_run_append = True
 ######################################
