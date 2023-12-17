@@ -807,7 +807,7 @@ def db_rename(stash_db: sqlite3.Connection, gallery_information):
     cursor.close()
 
 
-def db_rename_refactor(stash_db: sqlite3.Connection, scene_info):
+def db_rename_refactor(stash_db: sqlite3.Connection, gallery_information):
     cursor = stash_db.cursor()
     # 2022-09-17T11:25:52+02:00
     mod_time = datetime.now().astimezone().isoformat('T', 'seconds')
@@ -817,16 +817,16 @@ def db_rename_refactor(stash_db: sqlite3.Connection, scene_info):
     new_id = cursor.fetchall()[0][0] + 1
 
     # get the old folder id
-    cursor.execute("SELECT id FROM folders WHERE path=?", [scene_info['current_directory']])
+    cursor.execute("SELECT id FROM folders WHERE path=?", [gallery_information['current_directory']])
     old_folder_id = cursor.fetchall()[0][0]
 
     # check if the folder of file is created in db
-    cursor.execute("SELECT id FROM folders WHERE path=?", [scene_info['new_directory']])
+    cursor.execute("SELECT id FROM folders WHERE path=?", [gallery_information['new_directory']])
     folder_id = cursor.fetchall()
     if not folder_id:
-        dir = scene_info['new_directory']
+        dir = gallery_information['new_directory']
         # reduce the path to find a parent folder
-        for _ in range(1, len(scene_info['new_directory'].split(os.sep))):
+        for _ in range(1, len(gallery_information['new_directory'].split(os.sep))):
             dir = os.path.dirname(dir)
             cursor.execute("SELECT id FROM folders WHERE path=?", [dir])
             parent_id = cursor.fetchall()
@@ -835,7 +835,7 @@ def db_rename_refactor(stash_db: sqlite3.Connection, scene_info):
                 cursor.execute(
                     "INSERT INTO 'main'.'folders'('id', 'path', 'parent_folder_id', 'mod_time', 'created_at', 'updated_at', 'zip_file_id') VALUES (?, ?, ?, ?, ?, ?, ?);",
                     [
-                        new_id, scene_info['new_directory'], parent_id[0][0],
+                        new_id, gallery_information['new_directory'], parent_id[0][0],
                         mod_time, mod_time, mod_time, None
                     ])
                 stash_db.commit()
@@ -844,7 +844,7 @@ def db_rename_refactor(stash_db: sqlite3.Connection, scene_info):
     else:
         folder_id = folder_id[0][0]
     if folder_id:
-        cursor.execute("SELECT file_id from scenes_files WHERE scene_id=?", [scene_info['scene_id']])
+        cursor.execute("SELECT file_id from gallery_files WHERE gallery_id=?", [gallery_information['gallery_id']])
         file_ids = cursor.fetchall()
         file_id = None
         for f in file_ids:
@@ -856,15 +856,15 @@ def db_rename_refactor(stash_db: sqlite3.Connection, scene_info):
                 file_id = f[0]
                 break
         if file_id:
-            #log.LogDebug(f"UPDATE files SET basename={scene_info['new_filename']}, parent_folder_id={folder_id}, updated_at={mod_time} WHERE id={file_id};")
-            cursor.execute("UPDATE files SET basename=?, parent_folder_id=?, updated_at=? WHERE id=?;", [scene_info['new_filename'], folder_id, mod_time, file_id])
+            #log.LogDebug(f"UPDATE files SET basename={gallery_information['new_filename']}, parent_folder_id={folder_id}, updated_at={mod_time} WHERE id={file_id};")
+            cursor.execute("UPDATE files SET basename=?, parent_folder_id=?, updated_at=? WHERE id=?;", [gallery_information['new_filename'], folder_id, mod_time, file_id])
             cursor.close()
             stash_db.commit()
         else:
             raise Exception("Failed to find file_id")
     else:
         cursor.close()
-        raise Exception(f"You need to setup a library with the new location ({scene_info['new_directory']}) and scan at least 1 file")
+        raise Exception(f"You need to setup a library with the new location ({gallery_information['new_directory']}) and scan at least 1 file")
 
 
 def file_rename(current_path: str, new_path: str, scene_info: dict):
