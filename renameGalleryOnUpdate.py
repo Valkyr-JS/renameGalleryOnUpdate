@@ -794,7 +794,7 @@ def checking_duplicate_db(gallery_information: dict):
     galleries = graphql_findGallerybyPath(gallery_information['new_filename'], "EQUALS")
     if galleries["count"] > 0:
         for dupl_row in galleries["galleries"]:
-            if dupl_row['id'] != gallery_information['scene_id']:
+            if dupl_row['id'] != gallery_information['gallery_id']:
                 log.LogWarning(f"Duplicate filename: [{dupl_row['id']}]")
 
 
@@ -950,61 +950,40 @@ def associated_rename(gallery_information: dict):
                         log.LogError(f"Restoring the original name, error writing the logfile: {err}")
 
 
-def renamer(scene_id, db_conn=None):
+def renamer(gallery_id, db_conn=None):
     option_dryrun = False
-    if type(scene_id) is dict:
-        stash_scene = scene_id
-        scene_id = stash_scene['id']
-    elif type(scene_id) is int:
-        stash_scene = graphql_getGallery(scene_id)
+    if type(gallery_id) is dict:
+        stash_gallery = gallery_id
+        gallery_id = stash_gallery['id']
+    elif type(gallery_id) is int:
+        stash_gallery = graphql_getGallery(gallery_id)
 
-    if config.only_organized and not stash_scene['organized'] and not PATH_NON_ORGANIZED:
-        log.LogDebug(f"[{scene_id}] Scene ignored (not organized)")
+    if config.only_organized and not stash_gallery['organized'] and not PATH_NON_ORGANIZED:
+        log.LogDebug(f"[{gallery_id}] Gallery ignored (not organized)")
         return
 
     # refractor file support
-    fingerprint = []
-    if stash_scene.get("path"):
-        stash_scene["file"]["path"] = stash_scene["path"]
-        if stash_scene.get("checksum"):
-            fingerprint.append({
-                "type": "md5",
-                "value": stash_scene["checksum"]
-            })
-        if stash_scene.get("oshash"):
-            fingerprint.append({
-                "type": "oshash",
-                "value": stash_scene["oshash"]
-            })
-        stash_scene["file"]["fingerprints"] = fingerprint
-        scene_files = [stash_scene["file"]]
-        del stash_scene["path"]
-        del stash_scene["file"]
-    elif stash_scene.get("files"):
-        scene_files = stash_scene["files"]
-        del stash_scene["files"]
+    if stash_gallery.get("path"):
+        stash_gallery["file"]["path"] = stash_gallery["path"]
+        gallery_files = [stash_gallery["file"]]
+        del stash_gallery["path"]
+        del stash_gallery["file"]
+    elif stash_gallery.get("files"):
+        gallery_files = stash_gallery["files"]
+        del stash_gallery["files"]
     else:
-        scene_files = []
+        gallery_files = []
     stash_db = None
-    for i in range(0, len(scene_files)):
-        scene_file = scene_files[i]
+    for i in range(0, len(gallery_files)):
+        gallery_file = gallery_files[i]
         # refractor file support
-        for f in scene_file["fingerprints"]:
-            if f.get("oshash"):
-                stash_scene["oshash"] = f["oshash"]
-            if f.get("md5"):
-                stash_scene["checksum"] = f["md5"]
-        stash_scene["path"] = scene_file["path"]
-        stash_scene["file"] = scene_file
-        if scene_file.get("bit_rate"):
-            stash_scene["file"]["bitrate"] = scene_file["bit_rate"]
-        if scene_file.get("frame_rate"):
-            stash_scene["file"]["framerate"] = scene_file["frame_rate"]
+        stash_gallery["path"] = gallery_file["path"]
+        stash_gallery["file"] = gallery_file
 
         # Tags > Studios > Default
         template = {}
-        template["filename"] = get_template_filename(stash_scene)
-        template["path"] = get_template_path(stash_scene)
+        template["filename"] = get_template_filename(stash_gallery)
+        template["path"] = get_template_path(stash_gallery)
         if not template["path"].get("destination"):
             if config.p_use_default_template:
                 log.LogDebug("[PATH] Using default template")
@@ -1021,77 +1000,77 @@ def renamer(scene_id, db_conn=None):
             template["filename"] = config.default_template
 
         if not template["filename"] and not template["path"]:
-            log.LogWarning(f"[{scene_id}] No template for this scene.")
+            log.LogWarning(f"[{gallery_id}] No template for this gallery.")
             return
 
         #log.LogDebug("Using this template: {}".format(filename_template))
-        scene_information = extract_info(stash_scene, template)
-        log.LogDebug(f"[{scene_id}] Scene information: {scene_information}")
-        log.LogDebug(f"[{scene_id}] Template: {template}")
+        gallery_information = extract_info(stash_gallery, template)
+        log.LogDebug(f"[{gallery_id}] Gallery information: {gallery_information}")
+        log.LogDebug(f"[{gallery_id}] Template: {template}")
 
-        scene_information['scene_id'] = scene_id
-        scene_information['file_index'] = i
+        gallery_information['gallery_id'] = gallery_id
+        gallery_information['file_index'] = i
 
         for removed_field in ORDER_SHORTFIELD:
             if removed_field:
-                if scene_information.get(removed_field.replace("$", "")):
-                    del scene_information[removed_field.replace("$", "")]
+                if gallery_information.get(removed_field.replace("$", "")):
+                    del gallery_information[removed_field.replace("$", "")]
                     log.LogWarning(f"removed {removed_field} to reduce the length path")
                 else:
                     continue
             if template["filename"]:
-                scene_information['new_filename'] = create_new_filename(scene_information, template["filename"])
+                gallery_information['new_filename'] = create_new_filename(gallery_information, template["filename"])
             else:
-                scene_information['new_filename'] = scene_information['current_filename']
+                gallery_information['new_filename'] = gallery_information['current_filename']
             if template.get("path"):
-                scene_information['new_directory'] = create_new_path(scene_information, template)
+                gallery_information['new_directory'] = create_new_path(gallery_information, template)
             else:
-                scene_information['new_directory'] = scene_information['current_directory']
-            scene_information['final_path'] = os.path.join(scene_information['new_directory'], scene_information['new_filename'])
+                gallery_information['new_directory'] = gallery_information['current_directory']
+            gallery_information['final_path'] = os.path.join(gallery_information['new_directory'], gallery_information['new_filename'])
             # check length of path
-            if IGNORE_PATH_LENGTH or len(scene_information['final_path']) <= 240:
+            if IGNORE_PATH_LENGTH or len(gallery_information['final_path']) <= 240:
                 break
 
-        if check_longpath(scene_information['final_path']):
+        if check_longpath(gallery_information['final_path']):
             if (DRY_RUN or option_dryrun) and LOGFILE:
                 with open(DRY_RUN_FILE, 'a', encoding='utf-8') as f:
-                    f.write(f"[LENGTH LIMIT] {scene_information['scene_id']}|{scene_information['final_path']}\n")
+                    f.write(f"[LENGTH LIMIT] {gallery_information['gallery_id']}|{gallery_information['final_path']}\n")
             continue
 
-        #log.LogDebug(f"Filename: {scene_information['current_filename']} -> {scene_information['new_filename']}")
-        #log.LogDebug(f"Path: {scene_information['current_directory']} -> {scene_information['new_directory']}")
+        #log.LogDebug(f"Filename: {gallery_information['current_filename']} -> {gallery_information['new_filename']}")
+        #log.LogDebug(f"Path: {gallery_information['current_directory']} -> {gallery_information['new_directory']}")
 
-        if scene_information['final_path'] == scene_information['current_path']:
-            log.LogInfo(f"Everything is ok. ({scene_information['current_filename']})")
+        if gallery_information['final_path'] == gallery_information['current_path']:
+            log.LogInfo(f"Everything is ok. ({gallery_information['current_filename']})")
             continue
 
-        if scene_information['current_directory'] != scene_information['new_directory']:
+        if gallery_information['current_directory'] != gallery_information['new_directory']:
             log.LogInfo("File will be moved to another directory")
-            log.LogDebug(f"[OLD path] {scene_information['current_path']}")
-            log.LogDebug(f"[NEW path] {scene_information['final_path']}")
+            log.LogDebug(f"[OLD path] {gallery_information['current_path']}")
+            log.LogDebug(f"[NEW path] {gallery_information['final_path']}")
 
-        if scene_information['current_filename'] != scene_information['new_filename']:
+        if gallery_information['current_filename'] != gallery_information['new_filename']:
             log.LogInfo("The filename will be changed")
             if ALT_DIFF_DISPLAY:
-                find_diff_text(scene_information['current_filename'], scene_information['new_filename'])
+                find_diff_text(gallery_information['current_filename'], gallery_information['new_filename'])
             else:
-                log.LogDebug(f"[OLD filename] {scene_information['current_filename']}")
-                log.LogDebug(f"[NEW filename] {scene_information['new_filename']}")
+                log.LogDebug(f"[OLD filename] {gallery_information['current_filename']}")
+                log.LogDebug(f"[NEW filename] {gallery_information['new_filename']}")
 
         if (DRY_RUN or option_dryrun) and LOGFILE:
             with open(DRY_RUN_FILE, 'a', encoding='utf-8') as f:
-                f.write(f"{scene_information['scene_id']}|{scene_information['current_path']}|{scene_information['final_path']}\n")
+                f.write(f"{gallery_information['gallery_id']}|{gallery_information['current_path']}|{gallery_information['final_path']}\n")
             continue
         # check if there is already a file where the new path is
-        err = checking_duplicate_db(scene_information)
-        while err and scene_information['file_index']<=len(DUPLICATE_SUFFIX):
+        err = checking_duplicate_db(gallery_information)
+        while err and gallery_information['file_index']<=len(DUPLICATE_SUFFIX):
             log.LogDebug("Duplicate filename detected, increasing file index")
-            scene_information['file_index'] = scene_information['file_index'] + 1
-            scene_information['new_filename'] = create_new_filename(scene_information, template["filename"])
-            scene_information['final_path'] = os.path.join(scene_information['new_directory'], scene_information['new_filename'])
-            log.LogDebug(f"[NEW filename] {scene_information['new_filename']}")
-            log.LogDebug(f"[NEW path] {scene_information['final_path']}")
-            err = checking_duplicate_db(scene_information)
+            gallery_information['file_index'] = gallery_information['file_index'] + 1
+            gallery_information['new_filename'] = create_new_filename(gallery_information, template["filename"])
+            gallery_information['final_path'] = os.path.join(gallery_information['new_directory'], gallery_information['new_filename'])
+            log.LogDebug(f"[NEW filename] {gallery_information['new_filename']}")
+            log.LogDebug(f"[NEW path] {gallery_information['final_path']}")
+            err = checking_duplicate_db(gallery_information)
         # abort
         if err:
             raise Exception("duplicate")
@@ -1104,26 +1083,26 @@ def renamer(scene_id, db_conn=None):
             stash_db = db_conn
         try:
             # rename file on your disk
-            err = file_rename(scene_information['current_path'], scene_information['final_path'], scene_information)
+            err = file_rename(gallery_information['current_path'], gallery_information['final_path'], gallery_information)
             if err:
                 raise Exception("rename")
             # rename file on your db
             try:
                 if DB_VERSION >= DB_VERSION_FILE_REFACTOR:
-                    db_rename_refactor(stash_db, scene_information)
+                    db_rename_refactor(stash_db, gallery_information)
                 else:
-                    db_rename(stash_db, scene_information)
+                    db_rename(stash_db, gallery_information)
             except Exception as err:
                 log.LogError(f"error when trying to update the database ({err}), revert the move...")
-                err = file_rename(scene_information['final_path'], scene_information['current_path'], scene_information)
+                err = file_rename(gallery_information['final_path'], gallery_information['current_path'], gallery_information)
                 if err:
                     raise Exception("rename")
                 raise Exception("database update")
             if i == 0:
-                associated_rename(scene_information)
+                associated_rename(gallery_information)
             if template.get("path"):
                 if "clean_tag" in template["path"]["option"]:
-                    graphql_removeGalleriesTag([scene_information['scene_id']], template["path"]["opt_details"]["clean_tag"])
+                    graphql_removeGalleriesTag([gallery_information['gallery_id']], template["path"]["opt_details"]["clean_tag"])
         except Exception as err:
             log.LogError(f"Error during database operation ({err})")
             if not db_conn:
