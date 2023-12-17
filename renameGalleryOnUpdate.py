@@ -32,7 +32,7 @@ import log
 
 
 DB_VERSION_FILE_REFACTOR = 32
-DB_VERSION_SCENE_STUDIO_CODE = 38
+DB_VERSION_GALLERY_STUDIO_CODE = 38
 
 DRY_RUN = config.dry_run
 DRY_RUN_FILE = None
@@ -109,7 +109,14 @@ def graphql_getGallery(gallery_id):
         title
         date
         rating100
-        organized""" + FILE_QUERY + """
+        organized
+        files {
+            path
+            fingerprints {
+                type
+                value
+            }
+        }
         studio {
             id
             name
@@ -159,7 +166,13 @@ def graphql_findGallery(perPage, direc="DESC") -> dict:
         date
         rating100
         organized
-    """ + FILE_QUERY + """
+        files {
+            path
+            fingerprints {
+                type
+                value
+            }
+        }
         studio {
             id
             name
@@ -385,7 +398,7 @@ def get_template_path(gallery: dict):
     # Change by Studio
     if gallery.get("studio") and config.p_studio_templates:
         if config.p_studio_templates.get(gallery["studio"]["name"]):
-            template["destination"] = config.p_studio_templates[scene["studio"]["name"]]
+            template["destination"] = config.p_studio_templates[gallery["studio"]["name"]]
         # by Parent
         if gallery["studio"].get("parent_studio"):
             if config.p_studio_templates.get(gallery["studio"]["name"]):
@@ -848,7 +861,7 @@ def db_rename_refactor(stash_db: sqlite3.Connection, gallery_information):
         file_ids = cursor.fetchall()
         file_id = None
         for f in file_ids:
-            # it can have multiple file for a scene
+            # it can have multiple file for a gallery
             cursor.execute("SELECT parent_folder_id from files WHERE id=?", [f[0]])
             check_parent = cursor.fetchall()[0][0]
             # if the parent id is the one found above section, we find our file.s
@@ -1124,7 +1137,7 @@ def exit_plugin(msg=None, err=None):
 
 
 if PLUGIN_ARGS:
-    log.LogDebug("--Starting Plugin 'Renamer'--")
+    log.LogDebug("--Starting Plugin 'renameGalleryOnUpdate'--")
     if "bulk" not in PLUGIN_ARGS:
         if "enable" in PLUGIN_ARGS:
             log.LogInfo("Enable hook")
@@ -1145,15 +1158,11 @@ if PLUGIN_ARGS:
 else:
     if not config.enable_hook:
         exit_plugin("Hook disabled")
-    log.LogDebug("--Starting Hook 'Renamer'--")
+    log.LogDebug("--Starting Hook 'renameGalleryOnUpdate'--")
     FRAGMENT_HOOK_TYPE = FRAGMENT["args"]["hookContext"]["type"]
-    FRAGMENT_SCENE_ID = FRAGMENT["args"]["hookContext"]["id"]
+    FRAGMENT_GALLERY_ID = FRAGMENT["args"]["hookContext"]["id"]
 
 LOGFILE = config.log_file
-
-#Gallery.Update.Post
-#if FRAGMENT_HOOK_TYPE == "Scene.Update.Post":
-
 
 STASH_CONFIG = graphql_getConfiguration()
 STASH_DATABASE = STASH_CONFIG['general']['databasePath']
@@ -1212,52 +1221,20 @@ PATH_NON_ORGANIZED = config.p_non_organized
 PATH_ONEPERFORMER = config.path_one_performer
 
 DB_VERSION = graphql_getBuild()
-if DB_VERSION >= DB_VERSION_FILE_REFACTOR:
-    FILE_QUERY = """
-            files {
-                path
-                video_codec
-                audio_codec
-                width
-                height
-                frame_rate
-                duration
-                bit_rate
-                fingerprints {
-                    type
-                    value
-                }
-            }
-    """
-else:
-    FILE_QUERY = """
-            path
-            file {
-                video_codec
-                audio_codec
-                width
-                height
-                framerate
-                bitrate
-                duration
-            }
-    """
-if DB_VERSION >= DB_VERSION_SCENE_STUDIO_CODE:
-    FILE_QUERY = f"        code{FILE_QUERY}"
 
 if PLUGIN_ARGS:
     if "bulk" in PLUGIN_ARGS:
-        scenes = graphql_findGallery(config.batch_number_scene, "ASC")
-        log.LogDebug(f"Count scenes: {len(scenes['scenes'])}")
+        galleries = graphql_findGallery(config.batch_number_gallery, "ASC")
+        log.LogDebug(f"Count galleries: {len(galleries['galleries'])}")
         progress = 0
-        progress_step = 1 / len(scenes['scenes'])
+        progress_step = 1 / len(galleries['galleries'])
         stash_db = connect_db(STASH_DATABASE)
         if stash_db is None:
             exit_plugin()
-        for scene in scenes['scenes']:
-            log.LogDebug(f"** Checking scene: {scene['title']} - {scene['id']} **")
+        for gallery in galleries['galleries']:
+            log.LogDebug(f"** Checking gallery: {gallery['title']} - {gallery['id']} **")
             try:
-                renamer(scene, stash_db)
+                renamer(gallery, stash_db)
             except Exception as err:
                 log.LogError(f"main function error: {err}")
             progress += progress_step
@@ -1266,7 +1243,7 @@ if PLUGIN_ARGS:
         log.LogInfo("[SQLITE] Database closed!")
 else:
     try:
-        renamer(FRAGMENT_SCENE_ID)
+        renamer(FRAGMENT_GALLERY_ID)
     except Exception as err:
         log.LogError(f"main function error: {err}")
         traceback.print_exc()

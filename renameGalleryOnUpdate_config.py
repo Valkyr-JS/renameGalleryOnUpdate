@@ -244,8 +244,8 @@ order_field = ["$video_codec", "$audio_codec", "$resolution", "tags", "rating", 
 # Alternate way to show diff. Not useful at all.
 alt_diff_display = False
 
-# number of scene process by the task renamer. -1 = all scenes
-batch_number_scene = -1
+# number of gallery process by the task renamer. -1 = all galleries
+batch_number_gallery = -1
 
 # disable/enable the hook. You can edit this value in 'Plugin Tasks' inside of Stash.
 enable_hook = True
