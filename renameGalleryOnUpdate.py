@@ -134,7 +134,7 @@ def graphql_getGallery(gallery_id):
             name
             gender
             favorite
-            rating
+            rating100
             stash_ids{
                 endpoint
                 stash_id
