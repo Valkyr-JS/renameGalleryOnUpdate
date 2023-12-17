@@ -784,17 +784,17 @@ def connect_db(path: str):
     return sqliteConnection
 
 
-def checking_duplicate_db(scene_info: dict):
-    scenes = graphql_findGallerybyPath(scene_info['final_path'], "EQUALS")
-    if scenes["count"] > 0:
+def checking_duplicate_db(gallery_information: dict):
+    galleries = graphql_findGallerybyPath(gallery_information['final_path'], "EQUALS")
+    if galleries["count"] > 0:
         log.LogError("Duplicate path detected")
-        for dupl_row in scenes["scenes"]:
+        for dupl_row in galleries["galleries"]:
             log.LogWarning(f"Identical path: [{dupl_row['id']}]")
         return 1
-    scenes = graphql_findGallerybyPath(scene_info['new_filename'], "EQUALS")
-    if scenes["count"] > 0:
-        for dupl_row in scenes["scenes"]:
-            if dupl_row['id'] != scene_info['scene_id']:
+    galleries = graphql_findGallerybyPath(gallery_information['new_filename'], "EQUALS")
+    if galleries["count"] > 0:
+        for dupl_row in galleries["galleries"]:
+            if dupl_row['id'] != gallery_information['scene_id']:
                 log.LogWarning(f"Duplicate filename: [{dupl_row['id']}]")
 
 
