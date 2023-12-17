@@ -641,7 +641,7 @@ def remove_consecutive_nonword(text: str):
     return text
 
 
-def field_replacer(text: str, scene_information:dict):
+def field_replacer(text: str, gallery_information:dict):
     field_found = re.findall(r"\$\w+", text)
     result = text
     title = None
@@ -651,13 +651,13 @@ def field_replacer(text: str, scene_information:dict):
     for i in range(0, len(field_found)):
         f = field_found[i].replace("$", "").strip("_")
         # If $performer is before $title, prevent having duplicate text.
-        if f == "performer" and len(field_found) > i + 1 and scene_information.get('performer'):
-            if field_found[i+1] == "$title" and scene_information.get('title') and PREVENT_TITLE_PERF:
-                if re.search(f"^{scene_information['performer'].lower()}", scene_information['title'].lower()):
+        if f == "performer" and len(field_found) > i + 1 and gallery_information.get('performer'):
+            if field_found[i+1] == "$title" and gallery_information.get('title') and PREVENT_TITLE_PERF:
+                if re.search(f"^{gallery_information['performer'].lower()}", gallery_information['title'].lower()):
                     log.LogDebug("Ignoring the performer field because it's already in start of title")
                     result = result.replace("$performer", "")
                     continue
-        replaced_word = scene_information.get(f)
+        replaced_word = gallery_information.get(f)
         if not replaced_word:
             replaced_word = ""
         if FIELD_REPLACER.get(f"${f}"):
