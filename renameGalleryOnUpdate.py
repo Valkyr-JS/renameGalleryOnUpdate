@@ -25,7 +25,7 @@ except Exception:
 
 
 try:
-    import renamerOnUpdate_config as config
+    import renameGalleryOnUpdate_config as config
 except Exception:
     import config
 import log
@@ -38,7 +38,7 @@ DRY_RUN = config.dry_run
 DRY_RUN_FILE = None
 
 if config.log_file:
-    DRY_RUN_FILE = os.path.join(os.path.dirname(config.log_file), "renamerOnUpdate_dryrun.txt")
+    DRY_RUN_FILE = os.path.join(os.path.dirname(config.log_file), "renameGalleryOnUpdate_dryrun.txt")
 
 if DRY_RUN:
     if DRY_RUN_FILE and not config.dry_run_append:
