@@ -373,34 +373,34 @@ def get_template_filename(gallery: dict):
     return template
 
 
-def get_template_path(scene: dict):
+def get_template_path(gallery: dict):
     template = {"destination": "", "option": [], "opt_details": {}}
     # Change by Path
     if config.p_path_templates:
         for match, job in config.p_path_templates.items():
-            if match in scene["path"]:
+            if match in gallery["path"]:
                 template["destination"] = job
                 break
 
     # Change by Studio
-    if scene.get("studio") and config.p_studio_templates:
-        if config.p_studio_templates.get(scene["studio"]["name"]):
+    if gallery.get("studio") and config.p_studio_templates:
+        if config.p_studio_templates.get(gallery["studio"]["name"]):
             template["destination"] = config.p_studio_templates[scene["studio"]["name"]]
         # by Parent
-        if scene["studio"].get("parent_studio"):
-            if config.p_studio_templates.get(scene["studio"]["name"]):
-                template["destination"] = config.p_studio_templates[scene["studio"]["name"]]
+        if gallery["studio"].get("parent_studio"):
+            if config.p_studio_templates.get(gallery["studio"]["name"]):
+                template["destination"] = config.p_studio_templates[gallery["studio"]["name"]]
 
     # Change by Tag
-    tags = [x["name"] for x in scene["tags"]]
-    if scene.get("tags") and config.p_tag_templates:
+    tags = [x["name"] for x in gallery["tags"]]
+    if gallery.get("tags") and config.p_tag_templates:
         for match, job in config.p_tag_templates.items():
             if match in tags:
                 template["destination"] = job
                 break
 
-    if scene.get("tags") and config.p_tag_option:
-        for tag in scene["tags"]:
+    if gallery.get("tags") and config.p_tag_option:
+        for tag in gallery["tags"]:
             if config.p_tag_option.get(tag["name"]):
                 opt = config.p_tag_option[tag["name"]]
                 template["option"].extend(opt)
@@ -409,7 +409,7 @@ def get_template_path(scene: dict):
                         template["opt_details"]["clean_tag"].append(tag["id"])
                     else:
                         template["opt_details"] = {"clean_tag": [tag["id"]]}
-    if not scene['organized'] and PATH_NON_ORGANIZED:
+    if not gallery['organized'] and PATH_NON_ORGANIZED:
         template["destination"] = PATH_NON_ORGANIZED
     return template
 
