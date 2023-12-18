@@ -111,6 +111,7 @@ def graphql_getGallery(gallery_id):
         rating100
         organized
         files {
+            id
             path
             fingerprints {
                 type
@@ -167,6 +168,7 @@ def graphql_findGallery(perPage, direc="DESC") -> dict:
         rating100
         organized
         files {
+            id
             path
             fingerprints {
                 type
@@ -448,6 +450,7 @@ def extract_info(gallery: dict, template: None):
     # Grabbing things from Stash
     gallery_information = {}
 
+    gallery_information['zip_file_id'] = str(gallery['file']['id'])
     gallery_information['current_path'] = str(gallery['file']['path'])
     # note: contain the dot (.mp4)
     gallery_information['file_extension'] = os.path.splitext(gallery_information['current_path'])[1]
@@ -871,6 +874,8 @@ def db_rename_refactor(stash_db: sqlite3.Connection, gallery_information):
         if file_id:
             #log.LogDebug(f"UPDATE files SET basename={gallery_information['new_filename']}, parent_folder_id={folder_id}, updated_at={mod_time} WHERE id={file_id};")
             cursor.execute("UPDATE files SET basename=?, parent_folder_id=?, updated_at=? WHERE id=?;", [gallery_information['new_filename'], folder_id, mod_time, file_id])
+            # Correct image paths
+            cursor.execute("UPDATE folders SET path=?, updated_at=? WHERE zip_file_id=?", [gallery_information['final_path'], mod_time, file_id])
             cursor.close()
             stash_db.commit()
         else:
@@ -878,7 +883,6 @@ def db_rename_refactor(stash_db: sqlite3.Connection, gallery_information):
     else:
         cursor.close()
         raise Exception(f"You need to setup a library with the new location ({gallery_information['new_directory']}) and scan at least 1 file")
-
 
 def file_rename(current_path: str, new_path: str, gallery_information: dict):
     # OS Rename
