@@ -34,10 +34,10 @@ Using metadata from your Stash to rename/move your file.
 
 # Requirement
 
-- Stash (v0.15+)
+- Stash (v0.23+)
 - Python 3.6+ (Tested on Python v3.9.1 64bit, Win10)
 - Request Module (https://pypi.org/project/requests/)
-- Tested on Windows 10/Synology/docker.
+- Tested on Synology.
 
 # Installation
 
@@ -50,9 +50,9 @@ Using metadata from your Stash to rename/move your file.
 
 # Usage
 
-- Everytime you update a scene, it will check/rename your file. An update can be:
+- Everytime you update a gallery based on a zip file, it will check/rename your file. An update can be:
 
-  - Saving in **Scene Edit**.
+  - Saving in **Gallery Edit**.
   - Clicking the **Organized** button.
   - Running a scan that **updates** the path.
 
@@ -77,7 +77,7 @@ Using metadata from your Stash to rename/move your file.
   - It prevents editing the file, only shows in your log.
   - This mode can write into a file (`dryrun_renameGalleryOnUpdate.txt`), the change that the plugin will do.
     - You need to set a path for `log_file` in `config.py`
-    - The format will be: `scene_id|current path|new path`. (e.g. `100|C:\Temp\foo.mp4|C:\Temp\bar.mp4`)
+    - The format will be: `gallery_id|current path|new path`. (e.g. `100|C:\Temp\foo.zip|C:\Temp\bar.zip`)
     - This file will be overwritten everytime the plugin is triggered.
 
 # Config.py explained
@@ -95,12 +95,11 @@ To modify your path/filename, you can use **variables**. These are elements that
 
 In the example below, we will use:
 
-- Path: `C:\Temp\QmlnQnVja0J1bm55.mp4`
-- This file is [Big Buck Bunny](https://en.wikipedia.org/wiki/Big_Buck_Bunny).
+- Path: `C:\Temp\QmlnQnVja0J1bm55.zip`
 
 ## Filename
 
-Change your filename (C:\Temp\\**QmlnQnVja0J1bm55.mp4**)
+Change your filename (C:\Temp\\**QmlnQnVja0J1bm55.zip**)
 
 ---
 
@@ -110,7 +109,7 @@ Change your filename (C:\Temp\\**QmlnQnVja0J1bm55.mp4**)
 
 ```py
 tag_templates  = {
-	"rename_tag": "$year $title - $studio $resolution $video_codec",
+	"rename_tag": "$year $title - $studio",
 	"rename_tag2": "$title"
 }
 ```
@@ -197,6 +196,12 @@ p_default_template  =  r"D:\Video\"
 ```
 
 The file is moved to: `D:\Video\QmlnQnVja0J1bm55.mp4`
+
+### - Required fields
+```py
+required_fields = ["$date", "$title"]
+```
+Declare the fields that must have been completed in the gallery data in order to rename. If any of these are empty, the rename process will be stopped.
 
 ### - Special Variables
 
