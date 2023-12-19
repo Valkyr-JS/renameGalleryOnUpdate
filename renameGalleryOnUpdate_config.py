@@ -222,6 +222,9 @@ ignore_path_length = False
 # Field to remove if the path is too long. First in list will be removed then second then ... if length is still too long.
 order_field = ["tags", "rating", "$studio_family", "$studio", "$parent_studio", "$performer"]
 
+# If any of the following fields are not specified in the data, the file will not be renamed
+required_fields = ["$date", "$title"]
+
 # Alternate way to show diff. Not useful at all.
 alt_diff_display = False
 

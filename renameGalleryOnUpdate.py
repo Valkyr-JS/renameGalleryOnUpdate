@@ -1019,12 +1019,26 @@ def renamer(gallery_id, db_conn=None):
         if not template["filename"] and not template["path"]:
             log.LogWarning(f"[{gallery_id}] No template for this gallery.")
             return
-
+        
         #log.LogDebug("Using this template: {}".format(filename_template))
         gallery_information = extract_info(stash_gallery, template)
         log.LogDebug(f"[{gallery_id}] Gallery information: {gallery_information}")
         log.LogDebug(f"[{gallery_id}] Template: {template}")
 
+        # Check required fields have data
+        if "$date" in REQUIRED_FIELDS and not gallery_information.get('date'):
+            log.LogWarning(f"[{gallery_id}] Gallery date field is required for the filename but is empty.")
+            return
+        if "$performer" in REQUIRED_FIELDS and not gallery_information.get('performer'):
+            log.LogWarning(f"[{gallery_id}] Gallery performer field is required for the filename but is empty.")
+            return
+        if "$studio" in REQUIRED_FIELDS and not gallery_information.get('studio'):
+            log.LogWarning(f"[{gallery_id}] Gallery studio field is required for the filename but is empty.")
+            return
+        if "$title" in REQUIRED_FIELDS and not gallery_information.get('title'):
+            log.LogWarning(f"[{gallery_id}] Gallery title field is required for the filename but is empty.")
+            return
+        
         gallery_information['gallery_id'] = gallery_id
         gallery_information['file_index'] = i
 
@@ -1053,9 +1067,6 @@ def renamer(gallery_id, db_conn=None):
                 with open(DRY_RUN_FILE, 'a', encoding='utf-8') as f:
                     f.write(f"[LENGTH LIMIT] {gallery_information['gallery_id']}|{gallery_information['final_path']}\n")
             continue
-
-        #log.LogDebug(f"Filename: {gallery_information['current_filename']} -> {gallery_information['new_filename']}")
-        #log.LogDebug(f"Path: {gallery_information['current_directory']} -> {gallery_information['new_directory']}")
 
         if gallery_information['final_path'] == gallery_information['current_path']:
             log.LogInfo(f"Everything is ok. ({gallery_information['current_filename']})")
@@ -1216,6 +1227,8 @@ UNICODE_USE = config.use_ascii
 
 ORDER_SHORTFIELD = config.order_field
 ORDER_SHORTFIELD.insert(0, None)
+
+REQUIRED_FIELDS = config.required_fields
 
 ALT_DIFF_DISPLAY = config.alt_diff_display
 
