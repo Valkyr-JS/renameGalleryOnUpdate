@@ -874,8 +874,15 @@ def db_rename_refactor(stash_db: sqlite3.Connection, gallery_information):
         if file_id:
             #log.LogDebug(f"UPDATE files SET basename={gallery_information['new_filename']}, parent_folder_id={folder_id}, updated_at={mod_time} WHERE id={file_id};")
             cursor.execute("UPDATE files SET basename=?, parent_folder_id=?, updated_at=? WHERE id=?;", [gallery_information['new_filename'], folder_id, mod_time, file_id])
-            # Correct image paths
-            cursor.execute("UPDATE folders SET path=?, updated_at=? WHERE zip_file_id=?", [gallery_information['final_path'], mod_time, file_id])
+            # Correct image paths - there may be multiple paths due to
+            # subfolders in the zip. Each of these needs updating without
+            # changing the subfolders.
+            cursor.execute("SELECT id, path FROM folders WHERE zip_file_id=?", [file_id])
+            zip_rows = cursor.fetchall()
+            for row in zip_rows:
+                new_path = row[1].replace(gallery_information['current_path'], gallery_information['final_path'])
+                log.LogDebug(f"Updating path {row[1]} -> {new_path}")
+                cursor.execute("UPDATE folders SET path=?, updated_at=? WHERE id=?", [new_path, mod_time, row[0]])
             cursor.close()
             stash_db.commit()
         else:
