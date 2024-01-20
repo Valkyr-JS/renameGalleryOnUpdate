@@ -503,10 +503,10 @@ def extract_info(gallery: dict, template: None):
                 if "inverse_performer" in template["path"]["option"]:
                     perf["name"] = re.sub(r"([a-zA-Z]+)(\s)([a-zA-Z]+)", r"\3 \1", perf["name"])
             perf_list.append(perf['name'])
-            if perf.get('rating'):
-                if perf_rating.get(str(perf['rating'])) is None:
-                    perf_rating[str(perf['rating'])] = []
-                perf_rating[str(perf['rating'])].append(perf['name'])
+            if perf.get('rating100'):
+                if perf_rating.get(str(perf['rating100'])) is None:
+                    perf_rating[str(perf['rating100'])] = []
+                perf_rating[str(perf['rating100'])].append(perf['name'])
             else:
                 perf_rating["0"].append(perf['name'])
             if perf.get('favorite'):
